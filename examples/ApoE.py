@@ -7,6 +7,7 @@
 # http://snpedia.com/index.php/APOE
 
 import json
+import pprint
 
 from vmc.models import ObjectReference, Interval, Allele, Haplotype, Genotype
 import vmc.codecs.json
@@ -16,48 +17,52 @@ sr = ObjectReference(namespace="NCBI", accession="NC_000019.10")
 
 print(sr)
 
+
+print("\nIntervals:")
 intervals = {
     "rs429358": Interval(44908683, 44908684),
     "rs7412": Interval(44908821, 44908822),
     }
-
-print("\nIntervals:")
 for k, o in intervals.items():
     print(k, o)
 
 
+print("\nAlleles:")
 alleles = {
     "rs429358T": Allele(sr, intervals["rs429358"], "T"),
     "rs429358C": Allele(sr, intervals["rs429358"], "C"),
     "rs7412T":   Allele(sr, intervals["rs7412"],   "T"),
     "rs7412C":   Allele(sr, intervals["rs7412"],   "C"),
     }
-
-print("\nAlleles:")
 for k, o in alleles.items():
     print(k, o.digest, str(o))
 
 
-name_hap_map = {
+print("\nHaplotypes:")
+haplotypes = {
     "ε1": Haplotype([alleles["rs429358C"], alleles["rs7412T"]]),
     "ε2": Haplotype([alleles["rs429358T"], alleles["rs7412T"]]),
     "ε3": Haplotype([alleles["rs429358T"], alleles["rs7412C"]]),
     "ε4": Haplotype([alleles["rs429358C"], alleles["rs7412C"]]),
     }
-hap_name_map = {str(h.digest): n for n, h in name_hap_map.items()}
-
-print("\nHaplotypes:")
-for k, o in name_hap_map.items():
+for k, o in haplotypes.items():
     print(k, o.digest, o)
 
-haplotypes = list(name_hap_map.values())
-genotypes = [Genotype([haplotypes[i], haplotypes[j]])
-             for i in range(len(haplotypes))
-             for j in range(i, len(haplotypes))]
+
+haplotype_names = {str(h.digest): n for n, h in haplotypes.items()}
+print("\nHaplotype Names:")
+pprint.pprint(haplotype_names)
+
 
 print("\nGenotypes:")
-for o in genotypes:
-    print(o.digest, o)
+genotypes = {
+    "{}/{}".format(h1n, h2n): Genotype([h1, h2])
+    for h1n, h1 in haplotypes.items()
+    for h2n, h2 in haplotypes.items()
+    }
+for k, o in sorted(genotypes.items(), key=lambda kv: kv[0]):
+    print(k, o.digest)
+
 
 
 
@@ -68,7 +73,7 @@ patient_data = {
     "vmc:haplotypes": haplotypes,
     "vmc:genotypes": genotypes,
 
-    "haplotype_names": hap_name_map,
+    "haplotype_names": haplotype_names,
 
     "clinical significance": {
         "VH/q8_JMk85MxhmFXOAGYsf4aFoHuOyfAJE": "increased risk",
