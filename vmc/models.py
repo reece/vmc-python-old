@@ -6,8 +6,6 @@ import six
 
 from .digest import vmc_digest
 
-# Q: Is stringification the best way to generate binary rep?
-
 
 @attr.s
 @six.python_2_unicode_compatible
@@ -15,11 +13,11 @@ class ObjectReference(object):
     namespace = attr.ib(validator=instance_of(str))
     accession = attr.ib(validator=instance_of(str))
 
-    def validate(self):
-        attr.validate(self)
-
     def __str__(self):
         return "{self.namespace}/{self.accession}".format(self=self)
+
+    def validate(self):
+        attr.validate(self)
 
 
 @attr.s
@@ -27,6 +25,9 @@ class ObjectReference(object):
 class Interval(object):
     start = attr.ib(validator=instance_of(int))
     end = attr.ib(validator=instance_of(int))
+
+    def __str__(self):
+        return "<{self.start},{self.end}>".format(self=self)
 
     def validate(self):
         attr.validate(self)
@@ -36,9 +37,6 @@ class Interval(object):
         assert isinstance(other, Interval)
         return self.end > other.start and other.end > self.start
 
-    def __str__(self):
-        return "<{self.start},{self.end}>".format(self=self)
-
 
 @attr.s
 @six.python_2_unicode_compatible
@@ -46,33 +44,38 @@ class Allele(object):
     seqref = attr.ib(validator=instance_of(ObjectReference))
     interval = attr.ib(validator=instance_of(Interval))
     replacement = attr.ib(validator=instance_of(str))
-
-    def digest(self):
-        binary_rep = "{self.seqref}:{self.interval}:{self.replacement}".format(self=self).encode("UTF-8")
-        return ObjectReference("VA", vmc_digest(binary_rep))
-
-    def validate(self):
-        attr.validate(self)
+    _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
 
     def __str__(self):
         return "{self.seqref}:{self.interval}:{self.replacement}".format(self=self)
+
+    @property
+    def digest(self):
+        if not self._digest:
+            binary_rep = "{self.seqref}:{self.interval}:{self.replacement}".format(self=self).encode("UTF-8")
+            self._digest = ObjectReference("VA", vmc_digest(binary_rep))
+        return self._digest
+
+    def validate(self):
+        attr.validate(self)
 
 
 @attr.s
 @six.python_2_unicode_compatible
 class Haplotype(object):
     alleles = attr.ib(validator=instance_of(list))
-
-    # TODO: Defining ordering over Haplotypes
+    _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
 
     @property
+    def digest(self):
+        if not self._digest:
+            binary_rep = ";".join(sorted(str(a.digest) for a in self.alleles)).encode("UTF-8")
+            self._digest = ObjectReference("VH", vmc_digest(binary_rep))
+        return self._digest
+
     def seqref(self):
         self.validate()
         return self.alleles[0].seqref
-
-    def digest(self):
-        binary_rep = ";".join(str(a.digest()) for a in self.alleles).encode("UTF-8")
-        return ObjectReference("VH", vmc_digest(binary_rep))
 
     def validate(self):
         attr.validate(self)
@@ -91,20 +94,22 @@ class Haplotype(object):
 @six.python_2_unicode_compatible
 class Genotype(object):
     haplotypes = attr.ib(validator=instance_of(list))
+    _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
 
     @property
-    def seqref(self):
-        self.validate()
-        return self.alleles[0].seqref
+    def digest(self):
+        if not self._digest:
+            binary_rep = ";".join(sorted(str(h.digest) for h in self.haplotypes)).encode("UTF-8")
+            self._digest = ObjectReference("VG", vmc_digest(binary_rep))
+        return self._digest
 
-    @property
     def interval(self):
         self.validate()
         return self.alleles[0].interval
 
-    def digest(self):
-        binary_rep = ";".join(str(h.digest()) for h in self.haplotypes).encode("UTF-8")
-        return ObjectReference("VG", vmc_digest(binary_rep))
+    def seqref(self):
+        self.validate()
+        return self.alleles[0].seqref
 
     def validate(self):
         attr.validate(self)

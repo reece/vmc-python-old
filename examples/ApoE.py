@@ -11,10 +11,17 @@ from vmc.models import ObjectReference, Interval, Allele, Haplotype, Genotype
 
 sr = ObjectReference(namespace="NCBI", accession="NC_000019.10")
 
+print(sr)
+
 intervals = {
     "rs429358": Interval(44908683, 44908684),
     "rs7412": Interval(44908821, 44908822),
     }
+
+print("\nIntervals:")
+for k, o in intervals.items():
+    print(k, o)
+
 
 alleles = {
     "rs429358T": Allele(sr, intervals["rs429358"], "T"),
@@ -23,17 +30,29 @@ alleles = {
     "rs7412C":   Allele(sr, intervals["rs7412"],   "C"),
     }
 
+print("\nAlleles:")
+for k, o in alleles.items():
+    print(k, o.digest, str(o))
+
+
 name_hap_map = {
     "ε1": Haplotype([alleles["rs429358C"], alleles["rs7412T"]]),
     "ε2": Haplotype([alleles["rs429358T"], alleles["rs7412T"]]),
     "ε3": Haplotype([alleles["rs429358T"], alleles["rs7412C"]]),
     "ε4": Haplotype([alleles["rs429358C"], alleles["rs7412C"]]),
     }
-hap_name_map = {str(h.digest()): n for n, h in name_hap_map.items()}
+hap_name_map = {str(h.digest): n for n, h in name_hap_map.items()}
+
+print("\nHaplotypes:")
+for k, o in name_hap_map.items():
+    print(k, o.digest, o)
 
 haplotypes = list(name_hap_map.values())
-
 genotypes = [Genotype([haplotypes[i], haplotypes[j]])
              for i in range(len(haplotypes))
              for j in range(i, len(haplotypes))]
+
+print("\nGenotypes:")
+for o in genotypes:
+    print(o.digest, o)
 
