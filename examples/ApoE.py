@@ -1,5 +1,3 @@
-from vmc.models import ObjectReference, Interval, Allele, Haplotype, Genotype
-
 #                              rs7412 
 #                              NC_000019.10:g.44908822
 #                              C          T
@@ -7,6 +5,11 @@ from vmc.models import ObjectReference, Interval, Allele, Haplotype, Genotype
 # rs429358                 C   APOE-ε4    APOE-ε1
 # NC_000019.10:g.44908684  T   APOE-ε3    APOE-ε2
 # http://snpedia.com/index.php/APOE
+
+import json
+
+from vmc.models import ObjectReference, Interval, Allele, Haplotype, Genotype
+import vmc.codecs.json
 
 
 sr = ObjectReference(namespace="NCBI", accession="NC_000019.10")
@@ -56,3 +59,21 @@ print("\nGenotypes:")
 for o in genotypes:
     print(o.digest, o)
 
+
+
+patient_data = {
+    "sample-id": "e89c387a-b539-11e6-9d82-fb96077e5724",
+
+    "vmc:alleles": alleles,
+    "vmc:haplotypes": haplotypes,
+    "vmc:genotypes": genotypes,
+
+    "haplotype_names": hap_name_map,
+
+    "clinical significance": {
+        "VH/q8_JMk85MxhmFXOAGYsf4aFoHuOyfAJE": "increased risk",
+        }
+    }
+
+print(json.dumps(patient_data, indent=2, sort_keys=True,
+                 cls=vmc.codecs.json.JSONEncoder))

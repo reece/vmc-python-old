@@ -16,6 +16,9 @@ class ObjectReference(object):
     def __str__(self):
         return "{self.namespace}/{self.accession}".format(self=self)
 
+    def as_dict(self):
+        return attr.asdict(self)
+
     def validate(self):
         attr.validate(self)
 
@@ -28,6 +31,9 @@ class Interval(object):
 
     def __str__(self):
         return "<{self.start},{self.end}>".format(self=self)
+
+    def as_dict(self):
+        return attr.asdict(self)
 
     def validate(self):
         attr.validate(self)
@@ -49,6 +55,14 @@ class Allele(object):
     def __str__(self):
         return "{self.seqref}:{self.interval}:{self.replacement}".format(self=self)
 
+    def as_dict(self):
+        return {
+            "seqref": self.seqref.as_dict(),
+            "interval": self.interval.as_dict(),
+            "replacement": self.replacement,
+            "id": str(self.digest)
+            }
+
     @property
     def digest(self):
         if not self._digest:
@@ -67,9 +81,19 @@ class Haplotype(object):
     _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
 
     @property
+    def allele_ids(self):
+        return list(sorted(str(a.digest) for a in self.alleles))
+
+    def as_dict(self):
+        return {
+            "allele_ids": list(map(str, self.allele_ids)),
+            "id": str(self.digest)
+            }
+
+    @property
     def digest(self):
         if not self._digest:
-            binary_rep = ";".join(sorted(str(a.digest) for a in self.alleles)).encode("UTF-8")
+            binary_rep = ";".join(self.allele_ids).encode("UTF-8")
             self._digest = ObjectReference("VH", vmc_digest(binary_rep))
         return self._digest
 
@@ -96,10 +120,20 @@ class Genotype(object):
     haplotypes = attr.ib(validator=instance_of(list))
     _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
 
+    def as_dict(self):
+        return {
+            "haplotype_ids": list(map(str, self.haplotype_ids)),
+            "id": str(self.digest)
+            }
+
+    @property
+    def haplotype_ids(self):
+        return list(sorted(str(h.digest) for h in self.haplotypes))
+
     @property
     def digest(self):
         if not self._digest:
-            binary_rep = ";".join(sorted(str(h.digest) for h in self.haplotypes)).encode("UTF-8")
+            binary_rep = ";".join(self.haplotype_ids).encode("UTF-8")
             self._digest = ObjectReference("VG", vmc_digest(binary_rep))
         return self._digest
 
