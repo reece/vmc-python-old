@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import base64
-import hashlib
-import re
-
 import attr
 from attr.validators import instance_of
 import six
 
+from .digest import vmc_digest
+
+# Q: Is stringification the best way to generate binary rep?
+
 
 @attr.s
 @six.python_2_unicode_compatible
-class SequenceReference(object):
+class ObjectReference(object):
     namespace = attr.ib(validator=instance_of(str))
     accession = attr.ib(validator=instance_of(str))
 
@@ -43,9 +43,13 @@ class Interval(object):
 @attr.s
 @six.python_2_unicode_compatible
 class Allele(object):
-    seqref = attr.ib(validator=instance_of(SequenceReference))
+    seqref = attr.ib(validator=instance_of(ObjectReference))
     interval = attr.ib(validator=instance_of(Interval))
     replacement = attr.ib(validator=instance_of(str))
+
+    def digest(self):
+        binary_rep = "{self.seqref}:{self.interval}:{self.replacement}".format(self=self).encode("UTF-8")
+        return ObjectReference("VA", vmc_digest(binary_rep))
 
     def validate(self):
         attr.validate(self)
@@ -59,8 +63,21 @@ class Allele(object):
 class Haplotype(object):
     alleles = attr.ib(validator=instance_of(list))
 
+    # TODO: Defining ordering over Haplotypes
+
+    @property
+    def seqref(self):
+        self.validate()
+        return self.alleles[0].seqref
+
+    def digest(self):
+        binary_rep = ";".join(str(a.digest()) for a in self.alleles).encode("UTF-8")
+        return ObjectReference("VH", vmc_digest(binary_rep))
+
     def validate(self):
         attr.validate(self)
+        for a in self.alleles:
+            a.validate()
         if len(set(a.seqref for a in self.alleles)) != 1:
             raise ValueError("Haplotype alleles must be defined on the same sequence reference")
         for i in range(len(self.alleles) - 1):
@@ -75,9 +92,27 @@ class Haplotype(object):
 class Genotype(object):
     haplotypes = attr.ib(validator=instance_of(list))
 
+    @property
+    def seqref(self):
+        self.validate()
+        return self.alleles[0].seqref
+
+    @property
+    def interval(self):
+        self.validate()
+        return self.alleles[0].interval
+
+    def digest(self):
+        binary_rep = ";".join(str(h.digest()) for h in self.haplotypes).encode("UTF-8")
+        return ObjectReference("VG", vmc_digest(binary_rep))
+
     def validate(self):
         attr.validate(self)
+        for a in self.alleles:
+            a.validate()
         if len(set(a.seqref for a in self.alleles)) != 1:
             raise ValueError("Genotype alleles must be defined on the same sequence reference")
         if len(set(a.interval for a in self.alleles)) != 1:
             raise ValueError("Genotype alleles must be defined at the same interval")
+        # TODO: Ensure Haplotypes are ordered (see haplotype ordering above)
+

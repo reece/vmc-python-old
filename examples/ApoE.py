@@ -1,4 +1,4 @@
-from vmc.models import SequenceReference, Interval, Allele, Haplotype, Genotype
+from vmc.models import ObjectReference, Interval, Allele, Haplotype, Genotype
 
 #                              rs7412 
 #                              NC_000019.10:g.44908822
@@ -9,7 +9,7 @@ from vmc.models import SequenceReference, Interval, Allele, Haplotype, Genotype
 # http://snpedia.com/index.php/APOE
 
 
-sr = SequenceReference(namespace="NCBI", accession="NC_000019.10")
+sr = ObjectReference(namespace="NCBI", accession="NC_000019.10")
 
 i429358 = Interval(44908683, 44908684)
 i7412 = Interval(44908821, 44908822)
@@ -19,8 +19,17 @@ rs429358C = Allele(sr, i429358, "C")
 rs7412T = Allele(sr, i7412, "T")
 rs7412C = Allele(sr, i7412, "C")
 
-apoe1 = Haplotype([rs429358C, rs7412T])
-apoe2 = Haplotype([rs429358T, rs7412T])
-apoe3 = Haplotype([rs429358T, rs7412C])
-apoe4 = Haplotype([rs429358C, rs7412C])
+name_hap_map = {
+    "ε1": Haplotype([rs429358C, rs7412T]),
+    "ε2": Haplotype([rs429358T, rs7412T]),
+    "ε3": Haplotype([rs429358T, rs7412C]),
+    "ε4": Haplotype([rs429358C, rs7412C]),
+    }
+hap_name_map = {str(h.digest()): n for n, h in name_hap_map.items()}
+
+haps = list(name_hap_map.values())
+
+gts = [Genotype([haps[i], haps[j]])
+       for i in range(len(haps))
+       for j in range(i, len(haps))]
 
