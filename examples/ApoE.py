@@ -69,9 +69,9 @@ for k, o in sorted(genotypes.items(), key=lambda kv: kv[0]):
 patient_data = {
     "sample-id": "e89c387a-b539-11e6-9d82-fb96077e5724",
 
-    "vmc:alleles": alleles,
-    "vmc:haplotypes": haplotypes,
-    "vmc:genotypes": genotypes,
+    "vmc:alleles": alleles.values(),
+    "vmc:haplotypes": haplotypes.values(),
+    "vmc:genotypes": genotypes.values(),
 
     "haplotype_names": haplotype_names,
 
