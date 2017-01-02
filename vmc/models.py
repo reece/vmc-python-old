@@ -25,7 +25,13 @@ class ObjectReference(object):
 
 @attr.s
 @six.python_2_unicode_compatible
-class Interval(object):
+class Location(object):
+    pass
+
+
+@attr.s
+@six.python_2_unicode_compatible
+class Interval(Location):
     start = attr.ib(validator=instance_of(int))
     end = attr.ib(validator=instance_of(int))
 
@@ -48,17 +54,17 @@ class Interval(object):
 @six.python_2_unicode_compatible
 class Allele(object):
     seqref = attr.ib(validator=instance_of(ObjectReference))
-    interval = attr.ib(validator=instance_of(Interval))
+    location = attr.ib(validator=instance_of(Location))
     replacement = attr.ib(validator=instance_of(str))
     _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
 
     def __str__(self):
-        return "{self.seqref}:{self.interval}:{self.replacement}".format(self=self)
+        return "{self.seqref}:{self.location}:{self.replacement}".format(self=self)
 
     def as_dict(self):
         return {
             "seqref": self.seqref.as_dict(),
-            "interval": self.interval.as_dict(),
+            "location": self.location.as_dict(),
             "replacement": self.replacement,
             "id": str(self.digest)
             }
@@ -66,7 +72,7 @@ class Allele(object):
     @property
     def digest(self):
         if not self._digest:
-            binary_rep = "{self.seqref}:{self.interval}:{self.replacement}".format(self=self).encode("UTF-8")
+            binary_rep = "{self.seqref}:{self.location}:{self.replacement}".format(self=self).encode("UTF-8")
             self._digest = ObjectReference("VA", vmc_digest(binary_rep))
         return self._digest
 
@@ -108,9 +114,9 @@ class Haplotype(object):
         if len(set(a.seqref for a in self.alleles)) != 1:
             raise ValueError("Haplotype alleles must be defined on the same sequence reference")
         for i in range(len(self.alleles) - 1):
-            if self.alleles[i].interval.start > self.alleles[i + 1].interval.start:
+            if self.alleles[i].location.start > self.alleles[i + 1].location.start:
                 raise ValueError("Haplotype alleles must be ordered")
-            if self.alleles[i].interval.end > self.alleles[i + 1].interval.start:
+            if self.alleles[i].location.end > self.alleles[i + 1].location.start:
                 raise ValueError("Haplotype alleles may not overlap")
 
 
@@ -137,9 +143,9 @@ class Genotype(object):
             self._digest = ObjectReference("VG", vmc_digest(binary_rep))
         return self._digest
 
-    def interval(self):
+    def location(self):
         self.validate()
-        return self.alleles[0].interval
+        return self.alleles[0].location
 
     def seqref(self):
         self.validate()
@@ -151,7 +157,7 @@ class Genotype(object):
             a.validate()
         if len(set(a.seqref for a in self.alleles)) != 1:
             raise ValueError("Genotype alleles must be defined on the same sequence reference")
-        if len(set(a.interval for a in self.alleles)) != 1:
-            raise ValueError("Genotype alleles must be defined at the same interval")
+        if len(set(a.location for a in self.alleles)) != 1:
+            raise ValueError("Genotype alleles must be defined at the same Location")
         # TODO: Ensure Haplotypes are ordered (see haplotype ordering above)
 
