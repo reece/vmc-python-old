@@ -45,7 +45,7 @@ class Interval(Location):
         attr.validate(self)
         assert 0 <= self.start <= self.end
 
-    def overlaps_with(self, other):
+    def overlaps(self, other):
         assert isinstance(other, Interval)
         return self.end > other.start and other.end > self.start
 
