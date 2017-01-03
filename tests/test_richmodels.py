@@ -1,4 +1,4 @@
-from vmc.models import Allele, Genotype, Haplotype, Interval, Location, ObjectReference
+from vmc.richmodels import Allele, Genotype, Haplotype, Interval, Location, ObjectReference
 
 
 sr = ObjectReference(namespace="NCBI", accession="NC_000019.10")

@@ -9,7 +9,7 @@
 import json
 import pprint
 
-from vmc.models import ObjectReference, Interval, Allele, Haplotype, Genotype
+from vmc.richmodels import ObjectReference, Interval, Allele, Haplotype, Genotype
 import vmc.codecs.json
 
 
