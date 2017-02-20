@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import attr
-from attr.validators import instance_of
+from attr.validators import instance_of, optional
 import six
 
 from .digest import vmc_digest
@@ -10,8 +12,8 @@ from .digest import vmc_digest
 @attr.s
 @six.python_2_unicode_compatible
 class ObjectReference(object):
-    namespace = attr.ib(validator=instance_of(str))
-    accession = attr.ib(validator=instance_of(str))
+    namespace = attr.ib(validator=instance_of(six.text_type))
+    accession = attr.ib(validator=instance_of(six.text_type))
 
     def __str__(self):
         return "{self.namespace}/{self.accession}".format(self=self)
@@ -24,7 +26,6 @@ class ObjectReference(object):
 
 
 @attr.s
-@six.python_2_unicode_compatible
 class Location(object):
     pass
 
@@ -51,15 +52,14 @@ class Interval(Location):
 
 
 @attr.s
-@six.python_2_unicode_compatible
 class Allele(object):
     seqref = attr.ib(validator=instance_of(ObjectReference))
     location = attr.ib(validator=instance_of(Location))
-    replacement = attr.ib(validator=instance_of(str))
-    _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
+    replacement = attr.ib(validator=instance_of(six.text_type))
+    id = attr.ib(default=None, validator=optional(instance_of(ObjectReference)))
 
-    def __str__(self):
-        return "{self.seqref}:{self.location}:{self.replacement}".format(self=self)
+    #def __str__(self):
+    #    return "{self.seqref}:{self.location}:{self.replacement}".format(self=self)
 
     def as_dict(self):
         return {
@@ -71,20 +71,17 @@ class Allele(object):
 
     @property
     def digest(self):
-        if not self._digest:
-            binary_rep = "{self.seqref}:{self.location}:{self.replacement}".format(self=self).encode("UTF-8")
-            self._digest = ObjectReference("VA", vmc_digest(binary_rep))
-        return self._digest
+        binary_rep = "{self.seqref}:{self.location}:{self.replacement}".format(self=self).encode("UTF-8")
+        return ObjectReference("GA", vmc_digest(binary_rep))
 
     def validate(self):
         attr.validate(self)
 
 
 @attr.s
-@six.python_2_unicode_compatible
 class Haplotype(object):
     alleles = attr.ib(validator=instance_of(list))
-    _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
+    id = attr.ib(default=None, validator=optional(instance_of(ObjectReference)))
 
     @property
     def allele_ids(self):
@@ -98,10 +95,8 @@ class Haplotype(object):
 
     @property
     def digest(self):
-        if not self._digest:
-            binary_rep = ";".join(self.allele_ids).encode("UTF-8")
-            self._digest = ObjectReference("VH", vmc_digest(binary_rep))
-        return self._digest
+        binary_rep = ";".join(self.allele_ids).encode("UTF-8")
+        return ObjectReference("GH", vmc_digest(binary_rep))
 
     def seqref(self):
         self.validate()
@@ -121,10 +116,9 @@ class Haplotype(object):
 
 
 @attr.s
-@six.python_2_unicode_compatible
 class Genotype(object):
     haplotypes = attr.ib(validator=instance_of(list))
-    _digest = attr.ib(default=None, cmp=False, init=False, repr=False)
+    id = attr.ib(default=None, validator=optional(instance_of(ObjectReference)))
 
     def as_dict(self):
         return {
@@ -138,10 +132,8 @@ class Genotype(object):
 
     @property
     def digest(self):
-        if not self._digest:
-            binary_rep = ";".join(self.haplotype_ids).encode("UTF-8")
-            self._digest = ObjectReference("VG", vmc_digest(binary_rep))
-        return self._digest
+        binary_rep = ";".join(self.haplotype_ids).encode("UTF-8")
+        return ObjectReference("GG", vmc_digest(binary_rep))
 
     def location(self):
         self.validate()
