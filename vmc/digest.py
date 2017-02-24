@@ -113,5 +113,5 @@ if __name__ == "__main__":      # pragma: nocover
     field_names = ["#m"] + ["P<={P}".format(P=P) for P in P_bins]
     pt = prettytable.PrettyTable(field_names=field_names)
     for n_m in m_bins:
-        pt.add_row(["{:g}".format(n_m)] + [B(P,n_m) for P in P_bins])
+        pt.add_row(["{:g}".format(n_m)] + [B(P, n_m) for P in P_bins])
     print(pt)

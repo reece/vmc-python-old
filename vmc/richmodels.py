@@ -6,7 +6,7 @@ import attr
 from attr.validators import instance_of, optional
 import six
 
-from .digest import vmc_digest
+from vmc.digest import vmc_digest
 
 
 @attr.s
@@ -16,7 +16,7 @@ class ObjectReference(object):
     accession = attr.ib(validator=instance_of(six.text_type))
 
     def __str__(self):
-        return "{self.namespace}/{self.accession}".format(self=self)
+        return "{self.namespace}:{self.accession}".format(self=self)
 
     def as_dict(self):
         return attr.asdict(self)

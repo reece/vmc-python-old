@@ -89,6 +89,11 @@ doc docs: develop
 	# RTD makes json. Build here to ensure that it works.
 	make -C doc html json
 
+
+nb:
+	jupyter notebook --notebook-dir examples
+
+
 #=> clean: remove temporary and backup files
 .PHONY: clean
 clean:
