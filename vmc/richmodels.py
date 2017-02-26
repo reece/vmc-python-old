@@ -10,28 +10,6 @@ from vmc.digest import vmc_digest
 
 
 @attr.s
-@six.python_2_unicode_compatible
-class Identifier(object):
-    namespace = attr.ib(validator=instance_of(six.text_type))
-    accession = attr.ib(validator=instance_of(six.text_type))
-
-    def __bytes__(self):
-        return self.__str__().encode("UTF-8")
-
-    def __str__(self):
-        return self.as_uri()
-
-    def as_dict(self):
-        return attr.asdict(self)
-
-    def as_uri(self):
-        return "{self.namespace}:{self.accession}".format(self=self)
-
-    def validate(self):
-        attr.validate(self)
-
-
-@attr.s
 class Location(object):
     pass
 
@@ -64,7 +42,7 @@ class Interval(Location):
 class Locus(object):
     seqref = attr.ib(validator=instance_of(str))
     location = attr.ib(validator=instance_of(Location))
-    id = attr.ib(default=None, validator=optional(instance_of(str)))
+    id = attr.ib(default=None, validator=optional(instance_of(str)),  cmp=False)
 
     @property
     def identifier(self):
@@ -98,7 +76,7 @@ class Allele(object):
     seqref = attr.ib(validator=instance_of(str))
     location = attr.ib(validator=instance_of(Location))
     replacement = attr.ib(validator=instance_of(six.text_type))
-    id = attr.ib(default=None, validator=optional(instance_of(str)))
+    id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
 
     @property
     def identifier(self):
@@ -130,7 +108,7 @@ class Allele(object):
 @attr.s
 class Haplotype(object):
     alleles = attr.ib(validator=instance_of(list))
-    id = attr.ib(default=None, validator=optional(instance_of(str)))
+    id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
 
     @property
     def identifier(self):
@@ -168,7 +146,7 @@ class Haplotype(object):
 @attr.s
 class Genotype(object):
     haplotypes = attr.ib(validator=instance_of(list))
-    id = attr.ib(default=None, validator=optional(instance_of(str)))
+    id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
 
     @property
     def identifier(self):
