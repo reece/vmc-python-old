@@ -1,4 +1,8 @@
 import itertools
+import re
+
+
+uri_re = re.compile("([^:]+):(.+)")   
 
 
 def multimap(iter, invert=False):
@@ -18,3 +22,11 @@ def multimap(iter, invert=False):
     iter2 = ((b, a) for a, b in iter) if invert else iter
     i = itertools.groupby(sorted(iter2), lambda e: e[0])
     return {k: list(e[1] for e in ei) for k, ei in i}
+
+
+
+def seq_id(sr, uri):
+    namespace, alias = uri_re.match(uri).groups()
+    namespace = namespace.lower()
+    aliases = sr.aliases.find_aliases(namespace="ncbi", alias="NC_000019.10").fetchall()
+    return "GS:" + aliases[0]["seq_id"]
