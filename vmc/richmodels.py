@@ -5,8 +5,25 @@ from __future__ import unicode_literals
 import attr
 from attr.validators import instance_of, optional
 import six
+import uuid
 
 from vmc.digest import vmc_digest
+
+
+s = 0
+def faa():
+    """fetch-and-add"""
+    global s
+    s += 1
+    return s
+
+id_functions = {
+    'uuid': lambda o: str(uuid.uuid4()),
+    'digest': lambda o: str(o.computed_identifier()),
+    'serial': lambda o: "VMC_{:06d}".format(faa())
+}
+id_function = id_functions["uuid"]
+
 
 
 @attr.s
@@ -44,12 +61,6 @@ class Locus(object):
     location = attr.ib(validator=instance_of(Location))
     id = attr.ib(default=None, validator=optional(instance_of(str)),  cmp=False)
 
-    @property
-    def identifier(self):
-        if self.id is None:
-            self.id = self.computed_identifer()
-        return self.id
-
     def __bytes__(self):
         return self.__str__().encode("UTF-8")
 
@@ -59,7 +70,7 @@ class Locus(object):
     def as_dict(self):
         return attr.asdict(self)
 
-    def computed_identifer(self):
+    def computed_identifier(self):
         return "GL:" + self.digest()
 
     def digest(self):
@@ -77,12 +88,11 @@ class Allele(object):
     location = attr.ib(validator=instance_of(Location))
     replacement = attr.ib(validator=instance_of(six.text_type))
     id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
+    identifiers = attr.ib(default=[], validator=instance_of(list), cmp=False)
 
-    @property
-    def identifier(self):
+    def __attrs_post_init__(self):
         if self.id is None:
-            self.id = self.computed_identifer()
-        return self.id
+            self.id = id_function(self)
 
     def __bytes__(self):
         return self.__str__().encode("UTF-8")
@@ -93,7 +103,7 @@ class Allele(object):
     def as_dict(self):
         return attr.asdict(self)
 
-    def computed_identifer(self):
+    def computed_identifier(self):
         return "GA:" + self.digest()
 
     def digest(self):
@@ -109,27 +119,26 @@ class Allele(object):
 class Haplotype(object):
     alleles = attr.ib(validator=instance_of(list))
     id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
+    identifiers = attr.ib(default=[], validator=instance_of(list), cmp=False)
 
-    @property
-    def identifier(self):
+    def __attrs_post_init__(self):
         if self.id is None:
-            self.id = self.computed_identifer()
-        return self.id
+            self.id = id_function(self)
 
     def allele_ids(self):
         # return unicode allele identifiers in UTF-8 encoded order
         # encoding eliminates effects of locale-specific collation order 
-        ids = [o.identifier for o in self.alleles]
+        ids = [a.id for a in self.alleles]
         ids.sort(key=lambda e: e.encode("UTF-8"))
         return ids
 
     def as_dict(self):
         return {
             "allele_ids": self.allele_ids(),
-            "id": self.identifier
+            "id": self.id
         }
 
-    def computed_identifer(self):
+    def computed_identifier(self):
         return "GH:" + self.digest()
 
     def digest(self):
@@ -147,17 +156,16 @@ class Haplotype(object):
 class Genotype(object):
     haplotypes = attr.ib(validator=instance_of(list))
     id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
+    identifiers = attr.ib(default=[], validator=instance_of(list), cmp=False)
 
-    @property
-    def identifier(self):
+    def __attrs_post_init__(self):
         if self.id is None:
-            self.id = self.computed_identifier()
-        return self.id
+            self.id = id_function(self)
 
     def as_dict(self):
         return {
             "haplotype_ids": self.haplotype_ids(),
-            "id": self.identifier
+            "id": self.id
         }
 
     def computed_identifier(self):
@@ -169,7 +177,7 @@ class Genotype(object):
     def haplotype_ids(self):
         # return unicode haplotype identifiers in UTF-8 encoded order
         # encoding eliminates effects of locale-specific collation order 
-        ids = [o.identifier for o in self.haplotypes]
+        ids = [h.id for h in self.haplotypes]
         ids.sort(key=lambda e: e.encode("UTF-8"))
         return ids
 
@@ -200,27 +208,27 @@ if __name__ == "__main__":
         "rs7412": Locus(sr, intervals["rs7412"]),
     }
     o = loci["rs429358"]
-    print("r={o!r}\ns={o}\nid={o.identifier}\nj={j}".format(o=o, j=to_json(o)))
+    print("r={o!r}\ns={o}\nid={o.id}\nj={j}".format(o=o, j=to_json(o)))
 
 
     alleles = {
-        "rs429358T": Allele(sr, intervals["rs429358"], "T"),
-        "rs429358C": Allele(sr, intervals["rs429358"], "C"),
-        "rs7412T":   Allele(sr, intervals["rs7412"],   "T"),
-        "rs7412C":   Allele(sr, intervals["rs7412"],   "C"),
+        "rs429358T": Allele(seqref=sr, location=intervals["rs429358"], replacement="T"),
+        "rs429358C": Allele(seqref=sr, location=intervals["rs429358"], replacement="C"),
+        "rs7412T":   Allele(seqref=sr, location=intervals["rs7412"],   replacement="T"),
+        "rs7412C":   Allele(seqref=sr, location=intervals["rs7412"],   replacement="C"),
     }
     o = alleles["rs429358C"]
-    print("r={o!r}\ns={o}\nid={o.identifier}\nj={j}".format(o=o, j=to_json(o)))
+    print("r={o!r}\ns={o}\nid={o.id}\nj={j}".format(o=o, j=to_json(o)))
 
     haplotypes = {
-        "ε1": Haplotype([alleles["rs429358C"], alleles["rs7412T"]]),
-        "ε2": Haplotype([alleles["rs429358T"], alleles["rs7412T"]]),
-        "ε3": Haplotype([alleles["rs429358T"], alleles["rs7412C"]]),
-        "ε4": Haplotype([alleles["rs429358C"], alleles["rs7412C"]]),
-        "ε4r": Haplotype([alleles["rs7412C"], alleles["rs429358C"]]),
+        "ε1":  Haplotype(alleles=[alleles["rs429358C"], alleles["rs7412T"]]),
+        "ε2":  Haplotype(alleles=[alleles["rs429358T"], alleles["rs7412T"]]),
+        "ε3":  Haplotype(alleles=[alleles["rs429358T"], alleles["rs7412C"]]),
+        "ε4":  Haplotype(alleles=[alleles["rs429358C"], alleles["rs7412C"]]),
+        "ε4r": Haplotype(alleles=[alleles["rs7412C"], alleles["rs429358C"]]),
     }
     o = haplotypes["ε1"]
-    print("r={o!r}\ns={o}\nid={o.identifier}\nj={j}".format(o=o, j=to_json(o)))
+    print("r={o!r}\ns={o}\nid={o.id}\nj={j}".format(o=o, j=to_json(o)))
 
     genotypes = {
         "{}/{}".format(h1n, h2n): Genotype([h1, h2])
@@ -228,4 +236,14 @@ if __name__ == "__main__":
         for h2n, h2 in haplotypes.items()
         }
     o = genotypes["ε1/ε1"]
-    print("r={o!r}\ns={o}\nid={o.identifier}\nj={j}".format(o=o, j=to_json(o)))
+    print("r={o!r}\ns={o}\nid={o.id}\nj={j}".format(o=o, j=to_json(o)))
+
+
+    doc = {
+        "meta": {
+            "schema_version": 1
+        },
+        "alleles": [a.as_dict() for a in alleles.values()],
+        "haplotypes": [h.as_dict() for h in haplotypes.values()],
+        "genotypes": [g.as_dict() for g in genotypes.values()],
+    }
