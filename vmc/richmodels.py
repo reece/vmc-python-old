@@ -19,16 +19,31 @@ def faa():
 
 id_functions = {
     'uuid': lambda o: str(uuid.uuid4()),
-    'digest': lambda o: str(o.computed_identifier()),
+    'digest': lambda o: str(o.digest())[-10:],
+    'ci': lambda o: str(o.computed_identifier()),
     'serial': lambda o: "VMC_{:06d}".format(faa())
 }
-id_function = id_functions["uuid"]
+id_function = "uuid"
 
 
 
 @attr.s
 class Location(object):
     pass
+
+
+@six.python_2_unicode_compatible
+class Identifier(six.text_type):
+    def _parse(self):
+        return self.partition(":")[0:3:2]  # first and last elements
+
+    @property
+    def scheme(self):
+        return self._parse()[0]
+
+    @property
+    def path(self):
+        return self._parse()[1]
 
 
 @attr.s
@@ -92,7 +107,7 @@ class Allele(object):
 
     def __attrs_post_init__(self):
         if self.id is None:
-            self.id = id_function(self)
+            self.id = id_functions[id_function](self)
 
     def __bytes__(self):
         return self.__str__().encode("UTF-8")
@@ -123,7 +138,7 @@ class Haplotype(object):
 
     def __attrs_post_init__(self):
         if self.id is None:
-            self.id = id_function(self)
+            self.id = id_functions[id_function](self)
 
     def allele_ids(self):
         # return unicode allele identifiers in UTF-8 encoded order
@@ -160,7 +175,7 @@ class Genotype(object):
 
     def __attrs_post_init__(self):
         if self.id is None:
-            self.id = id_function(self)
+            self.id = id_functions[id_function](self)
 
     def as_dict(self):
         return {

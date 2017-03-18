@@ -1,0 +1,33 @@
+Need sequence?
+
+
+demo app:
+
+- stores A, H, G
+- identifier->object map (Perhaps identifiers[origin]: {identifier: object})
+- relationships
+  - relclass = <name, fwd, rev, recip, trans>
+  - relation = <id1, id2, relname>
+  - better: relation_sets = {name: <id1, id2>}
+
+
+- HGVS -> A
+- load, store as json, xml, proto
+- versioning
+
+
+Questions:
+- store sequenc?e
+
+
+
+add A, H, G
+
+add BI to each
+
+define relationship types and instances between objects
+
+genereate computed_identifier for each type
+
+
+save, load stream as json, xml, protobuf
