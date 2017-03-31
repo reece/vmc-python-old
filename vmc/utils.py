@@ -1,8 +1,14 @@
 import itertools
+import json
 import re
+
+import hgvs.parser
+
+from vmc.richmodels import Allele, Interval
 
 
 uri_re = re.compile("([^:]+):(.+)")   
+hp = hgvs.parser.Parser()
 
 
 def multimap(iter, invert=False):
@@ -30,3 +36,10 @@ def seq_id(sr, uri):
     namespace = namespace.lower()
     aliases = sr.aliases.find_aliases(namespace="ncbi", alias="NC_000019.10").fetchall()
     return "GS:" + aliases[0]["seq_id"]
+
+
+def hgvs_to_Allele(hgvs):
+    var = hp.parse_hgvs_variant(hgvs)
+    return Allele(seqref=var.ac,
+                  location=Interval(var.posedit.pos.start-1, var.posedit.pos.end),
+                  replacement=var.posedit.edit.alt)

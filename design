@@ -31,3 +31,29 @@ genereate computed_identifier for each type
 
 
 save, load stream as json, xml, protobuf
+
+
+normalize alleles
+
+
+
+1)
+Allele := <seqref:Identifier, position:Position, replacement:Sequence>
+
+2)
+Allele := <location:Location, replacement:Sequence>
+Location := <seqref:Identfier, position:Position>
+
+3)
+Allele := <location:Identifier, replacement:Sequence>
+Location := <seqref:Identfier, position:Position>
+
+
+Haplotype := <seqref:Identifier, context:ContextEnum, allele_ids:Identifier[]>
+Genotype := <haplotype_ids:Identifier[]>
+
+
+
+0000 0000
+1111 1111
+0101 1010

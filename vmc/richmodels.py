@@ -1,30 +1,20 @@
 # -*- coding: utf-8 -*-
 
+# Questions:
+# - identifiers in A, H, G? Def not in DTO, but in rich models?
+#   Pro: "feels" natural to refer to allele.identifers
+#   Con: don't want allele to become grab bag of annotations (I think)
+# - Should richmodels compute ids or should they be assigned?
+# - Should richmodels compute digests?
+
+
 from __future__ import unicode_literals
 
 import attr
 from attr.validators import instance_of, optional
 import six
-import uuid
 
 from vmc.digest import vmc_digest
-
-
-s = 0
-def faa():
-    """fetch-and-add"""
-    global s
-    s += 1
-    return s
-
-id_functions = {
-    'uuid': lambda o: str(uuid.uuid4()),
-    'digest': lambda o: str(o.digest())[-10:],
-    'ci': lambda o: str(o.computed_identifier()),
-    'serial': lambda o: "VMC_{:06d}".format(faa())
-}
-id_function = "uuid"
-
 
 
 @attr.s
@@ -105,10 +95,6 @@ class Allele(object):
     id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
     identifiers = attr.ib(default=[], validator=instance_of(list), cmp=False)
 
-    def __attrs_post_init__(self):
-        if self.id is None:
-            self.id = id_functions[id_function](self)
-
     def __bytes__(self):
         return self.__str__().encode("UTF-8")
 
@@ -116,7 +102,12 @@ class Allele(object):
         return "{self.seqref}:{self.location}:{self.replacement}".format(self=self)
 
     def as_dict(self):
-        return attr.asdict(self)
+        return {
+            "seqref": self.seqref,
+            "location": self.location,
+            "replacement": self.replacement,
+            "id": self.id
+        }
 
     def computed_identifier(self):
         return "GA:" + self.digest()
@@ -135,10 +126,6 @@ class Haplotype(object):
     alleles = attr.ib(validator=instance_of(list))
     id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
     identifiers = attr.ib(default=[], validator=instance_of(list), cmp=False)
-
-    def __attrs_post_init__(self):
-        if self.id is None:
-            self.id = id_functions[id_function](self)
 
     def allele_ids(self):
         # return unicode allele identifiers in UTF-8 encoded order
@@ -173,14 +160,10 @@ class Genotype(object):
     id = attr.ib(default=None, validator=optional(instance_of(str)), cmp=False)
     identifiers = attr.ib(default=[], validator=instance_of(list), cmp=False)
 
-    def __attrs_post_init__(self):
-        if self.id is None:
-            self.id = id_functions[id_function](self)
-
     def as_dict(self):
         return {
             "haplotype_ids": self.haplotype_ids(),
-            "id": self.id
+            "id": self.digest()
         }
 
     def computed_identifier(self):

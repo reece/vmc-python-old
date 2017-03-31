@@ -7,6 +7,9 @@ import logging
 import pkg_resources
 import warnings
 
+from .richmodels import Allele, Genotype, Haplotype, Identifier, Interval, Locus
+
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -16,3 +19,4 @@ except pkg_resources.DistributionNotFound as e:  # pragma: no cover
     __version__ = None
 
 logger.info(__name__ + " " + __version__)
+
